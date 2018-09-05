@@ -1,16 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ClassLibrary
+﻿namespace ClassLibrary
 {
-    class HackerNewsOutput
+    public class HackerNewsOutput
     {
-            public string Title { get; set; }
-            public string URI { get; set; }
-            public string Author { get; set; }
-            public int Points { get; set; }
-            public int Comments { get; set; }
-            public int Rank { get; set; }    
+
+        public string title { get; set; }
+        public string uri { get; set; }
+        public string author { get; set; }
+        public int points { get; set; }
+        public int comments { get; set; }
+        public int rank { get; set; }
     }
 }
+
