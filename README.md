@@ -2,9 +2,24 @@
 
 In order to make it more fun to read for robots (and easier to integrate in our workflow) we would like to write a simple command line application that would output to STDOUT the top posts in JSON.
 
-## Getting Started
+## Example/Instructions
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+```
+  HackerNewsScraper.exe "numberOfPosts"  
+```
+Where number of posts is an integer stating how many posts you require from 1-100. This will then output the result to the console in this format:
+
+```
+{
+  "title": "Medieval Fantasy City Generator",
+  "uri": "https://watabou.itch.io/medieval-fantasy-city-generator",
+  "author": "BerislavLopac",
+  "points": 454,
+  "comments": 41,
+  "rank": 2
+}
+```
+
 
 ### Prerequisites
 
