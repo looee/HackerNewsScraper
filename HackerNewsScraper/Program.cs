@@ -128,7 +128,7 @@ namespace HackerNewsScraper
             }
             else
             {
-                //clears the object so it doesn't get used again.
+                //clears the object if the new object was invalid, so it doesn't get used again. 
                 HackerNews = null;
             }
         }
