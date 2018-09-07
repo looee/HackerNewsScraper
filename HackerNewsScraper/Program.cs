@@ -8,19 +8,25 @@ using System.Threading.Tasks;
 
 namespace HackerNewsScraper
 {
-    internal class Program
+    public class Program
     {
+        /// <summary>
+        /// A list of ids from the top 500 posts on hackernews, limited to the number specified by the user
+        /// </summary>
         public static int[] ListOfIds { get; set; }
 
         public static int RankIncrement { get; set; }
 
-        private static void Main(string[] args)
+        public  static HackerNewsOutput HackerNews { get; set; }
+
+        public static void Main(string[] args)
         {
             //Sets the initial rank as 1
-            RankIncrement = 1;
+            RankIncrement = 0;
             int x;
-            Console.WriteLine("Please enter the number of posts you want to see (0-100):");
-            String Result = Console.ReadLine();
+            //Console.WriteLine("Please enter the number of posts you want to see (0-100):");
+            //String Result = Console.ReadLine();
+            string Result = args.First();
             //Checks to see if the input is valid, if not keeps prompting.
             while (!Int32.TryParse(Result, out x) && x > 0 && x <= 100)
             {
@@ -35,9 +41,10 @@ namespace HackerNewsScraper
 
         private static async Task RunAsync(int x)
         {
+            //Creates new http client to be destroyed later
             using (var client = new HttpClient())
             {
-                client.BaseAddress = new Uri("https://hacker-news.firebaseio.com/");
+                client.BaseAddress = new Uri("https://hacker-news.firebaseio.com/");                
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
@@ -46,43 +53,12 @@ namespace HackerNewsScraper
 
                 foreach (int id in ListOfIds)
                 {
-                    await GetArticleInfo(client, id);
+                    await GetSingleArticleInfo(client, $"v0/item/{id}.json?print=pretty");
                 }
             }
-
-            Console.ReadLine();
-
+            //For debugging
+            //Console.ReadLine();
         }
-        private static async Task GetArticleInfo(HttpClient cons, int id)
-        {
-            try
-            {
-                HttpResponseMessage response = await cons.GetAsync($"{cons.BaseAddress}v0/item/{id}.json?print=pretty");
-                response.EnsureSuccessStatusCode();
-                RootObject jsonObject = await response.Content.ReadAsAsync<RootObject>();
-                var hackerNews = new HackerNewsOutput
-                {
-                    author = jsonObject.by,
-                    comments = jsonObject.descendants,
-                    points = jsonObject.score,
-                    rank = RankIncrement,
-                    title = jsonObject.title,
-                    uri = jsonObject.url
-                };
-                //Increments the rank
-                RankIncrement++;
-                Console.WriteLine("\n");
-                Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(hackerNews, Formatting.Indented));
-
-            }
-            catch (HttpRequestException e)
-            {
-                Console.WriteLine("\nException Caught!");
-                Console.WriteLine("Message :{0} ", e.Message);
-            }
-
-        }
-
 
         private static async Task GetTopArticleIds(HttpClient cons, int numberOfArticles)
         {
@@ -104,6 +80,59 @@ namespace HackerNewsScraper
             }
 
         }
+
+        private static async Task GetSingleArticleInfo(HttpClient cons, string subURL)
+        {
+            try
+            {
+                HttpResponseMessage response = await cons.GetAsync($"{cons.BaseAddress}{subURL}");
+                response.EnsureSuccessStatusCode();
+                RootObject jsonObject = await response.Content.ReadAsAsync<RootObject>();
+
+                ValidateAndArrangeArticleObject(jsonObject);
+            }
+            catch (HttpRequestException e)
+            {
+                Console.WriteLine("\nException Caught!");
+                Console.WriteLine("Message :{0} ", e.Message);
+            }
+
+        }
+
+        public static void ValidateAndArrangeArticleObject(RootObject jsonObject)
+        {           
+
+            //Checks to see if the author is empty, or it is longer than 256 characters. 
+            //Checks to see if the title is empty, or it is longer than 256 characters.
+            //Checks to see if uri is valid according to URI.IsWellFormedUriString().
+            //Checks to see if score is greater or equal to zero
+            //Checks to see if decendents/comments is greater or equal to zero
+            //If there are no problems continue. Otherwise skip this article.
+            if (!string.IsNullOrEmpty(jsonObject.by) && jsonObject.by.Length <= 256 && !string.IsNullOrEmpty(jsonObject.title) &&
+                jsonObject.title.Length <= 256 && Uri.IsWellFormedUriString(jsonObject.url, UriKind.Absolute) && jsonObject.score >= 0 &&
+                jsonObject.descendants >= 0)
+            {
+                //Increments the rank
+                RankIncrement++;
+                HackerNews = new HackerNewsOutput
+                {
+                    author = jsonObject.by,
+                    comments = jsonObject.descendants,
+                    points = jsonObject.score,
+                    rank = RankIncrement,
+                    title = jsonObject.title,
+                    uri = jsonObject.url
+                };
+                Console.WriteLine("\n");
+                Console.WriteLine(JsonConvert.SerializeObject(HackerNews, Formatting.Indented));
+            }
+            else
+            {
+                //clears the object so it doesn't get used again.
+                HackerNews = null;
+            }
+        }
+
 
 
 
